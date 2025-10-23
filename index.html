@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>La Chimica Player — Classe II - FSM</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>La Chimica Player</h1>
+  </header>
+
+  <div class="playlist" id="playlistList">
+    <!-- Lista dei brani generata dinamicamente -->
+  </div>
+
+  <div class="player">
+    <div class="player-controls">
+      <button id="prevBtn" title="Precedente">&lt;&lt;</button>
+      <button id="playBtn" title="Riproduci/Pausa">▶︎</button>
+      <button id="nextBtn" title="Successivo">&gt;&gt;</button>
+      <button id="shuffleBtn" title="Shuffle">S</button>
+      <button id="repeatBtn" title="Repeat">R</button>
+    </div>
+    <div class="progress-container" id="progressContainer">
+      <div class="progress" id="progress"></div>
+    </div>
+    <div class="now-info">
+      <span id="nowTitle">–</span> - <span id="nowArtist">–</span>
+    </div>
+  </div>
+
+  <audio id="audio" crossorigin="anonymous"></audio>
+
+  <script>
+    const folderPath = encodeURI('./La Chimica di classe II - FSM/');
+    const songsJsonPath = folderPath + 'songs.json';
+    const appState = { tracks: [], index: 0, shuffle: false, repeat: 'off' };
+
+    const el = {
+      playlistList: document.getElementById('playlistList'),
+      audio: document.getElementById('audio'),
+      playBtn: document.getElementById('playBtn'),
+      prevBtn: document.getElementById('prevBtn'),
+      nextBtn: document.getElementById('nextBtn'),
+      shuffleBtn: document.getElementById('shuffleBtn'),
+      repeatBtn: document.getElementById('repeatBtn'),
+      progress: document.getElementById('progress'),
+      nowTitle: document.getElementById('nowTitle'),
+      nowArtist: document.getElementById('nowArtist'),
+    };
+
+    function fmtSeconds(s){
+      if (!isFinite(s)) return '0:00';
+      s = Math.floor(s);
+      const m = Math.floor(s/60);
+      const sec = String(s % 60).padStart(2,'0');
+      return `${m}:${sec}`;
+    }
+
+    async function loadTracks(){
+      try {
+        const r = await fetch(songsJsonPath, {cache:'no-store'});
+        if (r.ok){
+          const arr = await r.json();
+          appState.tracks = arr.map(fn => ({
+            url: folderPath + encodeURIComponent(fn),
+            filename: fn
+          }));
+        } else {
+          console.warn('songs.json non trovato, prova directory listing.');
+          await listFromDirectory();
+        }
+      } catch(e){
+        console.warn('Errore fetch songs.json:', e);
+        await listFromDirectory();
+      }
+    }
+
+    async function listFromDirectory(){
+      try {
+        const r2 = await fetch(folderPath, {cache:'no-store'});
+        if (!r2.ok) throw 'No dir listing';
+        const text = await r2.text();
+        const regex = /href=["']([^"']+\.mp3)["']/ig;
+        const found = [];
+        let m;
+        while ((m = regex.exec(text)) !== null){
+          let href = m[1];
+          try {
+            const u = new URL(href, location.origin + folderPath);
+            found.push(u.href);
+          } catch(e){
+            found.push(folderPath + encodeURIComponent(href));
+          }
+        }
+        const uniq = Array.from(new Set(found));
+        appState.tracks = uniq.map(u => {
+          const parts = decodeURIComponent(u.split('/').pop()).split('?')[0].split('#')[0];
+          return { url: u, filename: parts };
+        });
+      } catch(e){
+        console.error('Errore listing directory:', e);
+        appState.tracks = [];
+      }
+    }
+
+    function normalizeTitle(filename){
+      const n = filename.replace(/\.[^/.]+$/, '');
+      const parts = n.split(' - ');
+      if (parts.length >= 3){
+        return { artist: parts[1].trim(), title: parts.slice(2).join(' - ').trim() };
+      }
+      if (parts.length === 2){
+        return { artist: '', title: parts[1].trim() };
+      }
+      return { artist: '', title: n };
+    }
+
+    function renderPlaylist(){
+      el.playlistList.innerHTML = '';
+      appState.tracks.forEach((t,i) => {
+        const md = normalizeTitle(t.filename);
+        const div = document.createElement('div');
+        div.className = 'song';
+        div.dataset.index = i;
+        div.innerHTML = `
+          <div class="song-info">
+            <div class="song-number">${String(i+1).padStart(2, '0')}</div>
+            <div class="song-title">${md.title}</div>
+          </div>
+          <div class="song-artist">${md.artist || ''}</div>
+        `;
+        div.addEventListener('click', () => {
+          playAtIndex(i);
+        });
+        el.playlistList.appendChild(div);
+      });
+    }
+
+    function updateActiveSong(){
+      const items = el.playlistList.querySelectorAll('.song');
+      items.forEach((el2, idx) => {
+        if (idx === appState.index) el2.classList.add('active');
+        else el2.classList.remove('active');
+      });
+      const t = appState.tracks[appState.index];
+      const md = normalizeTitle(t.filename);
+      el.nowTitle.textContent = md.title;
+      el.nowArtist.textContent = md.artist || '';
+    }
+
+    function playAtIndex(idx){
+      if (!appState.tracks.length) return;
+      appState.index = (idx + appState.tracks.length) % appState.tracks.length;
+      const t = appState.tracks[appState.index];
+      el.audio.src = t.url;
+      el.audio.play().then(() => {
+        el.playBtn.textContent = '❚❚'; // Pausa simbolo
+      }).catch(e => {
+        console.warn('Play fallito:', e);
+      });
+      updateActiveSong();
+    }
+
+    function playNext(){
+      if (appState.shuffle){
+        const next = Math.floor(Math.random() * appState.tracks.length);
+        playAtIndex(next);
+        return;
+      }
+      let next = appState.index + 1;
+      if (next >= appState.tracks.length){
+        if (appState.repeat === 'all') next = 0;
+        else { el.audio.pause(); el.playBtn.textContent = '▶︎'; return; }
+      }
+      playAtIndex(next);
+    }
+
+    function playPrev(){
+      if (el.audio.currentTime > 3){
+        el.audio.currentTime = 0;
+        return;
+      }
+      let prev = appState.index - 1;
+      if (prev < 0) prev = appState.tracks.length - 1;
+      playAtIndex(prev);
+    }
+
+    el.playBtn.addEventListener('click', () => {
+      if (el.audio.paused){
+        if (!el.audio.src) playAtIndex(0);
+        else el.audio.play().then(() => el.playBtn.textContent = '❚❚');
+      } else {
+        el.audio.pause();
+        el.playBtn.textContent = '>';
+      }
+    });
+    el.nextBtn.addEventListener('click', playNext);
+    el.prevBtn.addEventListener('click', playPrev);
+    el.shuffleBtn.addEventListener('click', () => {
+      appState.shuffle = !appState.shuffle;
+      el.shuffleBtn.style.color = appState.shuffle ? 'var(--spotify-green)' : '';
+    });
+    el.repeatBtn.addEventListener('click', () => {
+      if (appState.repeat === 'off') appState.repeat = 'all';
+      else if (appState.repeat === 'all') appState.repeat = 'one';
+      else appState.repeat = 'off';
+      el.repeatBtn.style.color = (appState.repeat === 'off' ? '' : 'var(--spotify-green)');
+    });
+
+    el.audio.addEventListener('timeupdate', () => {
+      if (!isFinite(el.audio.duration)) return;
+      const pct = (el.audio.currentTime / el.audio.duration) * 100;
+      el.progress.style.width = pct + '%';
+    });
+    el.audio.addEventListener('ended', () => playNext());
+
+    (async () => {
+      await loadTracks();
+      renderPlaylist();
+      if (appState.tracks.length) playAtIndex(0);
+    })();
+  </script>
+</body>
+</html>

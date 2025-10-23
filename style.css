@@ -1,0 +1,176 @@
+/* === FONT E COLORI === */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --spotify-green: #1db954;
+  --spotify-black: #121212;
+  --spotify-darkgray: #181818;
+  --spotify-lightgray: #282828;
+  --spotify-white: #ffffff;
+  --spotify-muted: #b3b3b3;
+  --transition-fast: 0.2s ease;
+  --transition-slow: 0.4s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--spotify-black);
+  color: var(--spotify-white);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* === HEADER === */
+header {
+  background: var(--spotify-darkgray);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #000;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+header h1 {
+  color: var(--spotify-green);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: -0.5px;
+}
+
+/* === PLAYLIST === */
+.playlist {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 2rem;
+  background: linear-gradient(to bottom, #202020 0%, #121212 100%);
+}
+
+.song {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--spotify-lightgray);
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 0.6rem;
+  transition: transform var(--transition-fast), background var(--transition-slow);
+  cursor: pointer;
+}
+
+.song:hover {
+  background: #2a2a2a;
+  transform: scale(1.02);
+}
+
+.song.active {
+  background: var(--spotify-green);
+  color: var(--spotify-black);
+  transform: scale(1.03);
+}
+
+.song-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.song-number {
+  color: var(--spotify-muted);
+  font-size: 0.9rem;
+  width: 25px;
+  text-align: center;
+}
+
+.song-title {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+/* === PLAYER === */
+.player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--spotify-darkgray);
+  border-top: 1px solid #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  box-shadow: 0 -3px 10px rgba(0,0,0,0.5);
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.player-controls button {
+  background: none;
+  border: none;
+  color: var(--spotify-white);
+  font-size: 1.5rem;
+  cursor: pointer;
+  transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.player-controls button:hover {
+  transform: scale(1.2);
+  color: var(--spotify-green);
+}
+
+/* === PROGRESS BAR === */
+.progress-container {
+  width: 90%;
+  height: 6px;
+  background: #404040;
+  border-radius: 3px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  width: 0%;
+  background: var(--spotify-green);
+  transition: width 0.1s linear;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 600px) {
+  header h1 {
+    font-size: 1.2rem;
+  }
+
+  .song-title {
+    font-size: 0.9rem;
+  }
+
+  .player-controls button {
+    font-size: 1.3rem;
+  }
+}
+
+/* === SCROLLBAR PERSONALIZZATA === */
+.playlist::-webkit-scrollbar {
+  width: 8px;
+}
+.playlist::-webkit-scrollbar-thumb {
+  background-color: var(--spotify-green);
+  border-radius: 4px;
+}
+.playlist::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
