@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>La Chimica Player — Classe II - FSM</title>
+  <title>SpotiFSM</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,7 +12,7 @@
   </header>
 
   <div class="playlist" id="playlistList">
-    <!-- Lista dei brani generata dinamicamente -->
+
   </div>
 
   <div class="player">
@@ -157,7 +157,7 @@
       const t = appState.tracks[appState.index];
       el.audio.src = t.url;
       el.audio.play().then(() => {
-        el.playBtn.textContent = '❚❚'; // Pausa simbolo
+        el.playBtn.textContent = '❚❚'; 
       }).catch(e => {
         console.warn('Play fallito:', e);
       });
@@ -225,3 +225,4 @@
   </script>
 </body>
 </html>
+
